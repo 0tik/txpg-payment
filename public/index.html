@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Payment Link Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0b0c0e;
+    --surface:   #111318;
+    --border:    #1f222b;
+    --border2:   #2a2e3b;
+    --text:      #e8eaf0;
+    --muted:     #636880;
+    --accent:    #c9a84c;
+    --accent2:   #e6c76a;
+    --green:     #3ecf8e;
+    --red:       #e05252;
+    --radius:    14px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -20%; left: 50%;
+    transform: translateX(-50%);
+    width: 700px; height: 500px;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  /* ── header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    animation: fadeDown 0.6s ease both;
+  }
+  .header .logo {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-bottom: 1.2rem;
+  }
+  .header .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .header .logo-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem; color: var(--accent2); letter-spacing: 0.01em;
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem; font-weight: 400; color: var(--text);
+    line-height: 1.2; margin-bottom: 0.5rem;
+  }
+  .header p { color: var(--muted); font-size: 0.9rem; font-weight: 300; }
+
+  /* ── card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 2rem;
+    animation: fadeUp 0.6s ease 0.1s both;
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.7;
+  }
+
+  /* ── login screen ── */
+  #loginScreen { display: none; }
+  #loginScreen.visible { display: block; }
+  #appScreen { display: none; }
+  #appScreen.visible { display: block; }
+
+  .lock-icon {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 1.2rem;
+    opacity: 0.8;
+  }
+  .login-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem; text-align: center;
+    margin-bottom: 0.4rem;
+  }
+  .login-sub {
+    color: var(--muted); font-size: 0.85rem;
+    text-align: center; margin-bottom: 1.8rem;
+  }
+
+  .pw-wrap {
+    display: flex;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg);
+    transition: border-color 0.2s;
+    margin-bottom: 1rem;
+  }
+  .pw-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+  }
+  #passwordInput {
+    flex: 1; border: none; background: transparent;
+    color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: 1rem; padding: 0.85rem 1rem; outline: none;
+    letter-spacing: 0.1em;
+  }
+  #passwordInput::placeholder { color: #2e3140; letter-spacing: 0; }
+  .pw-toggle {
+    padding: 0 1rem;
+    background: none; border: none;
+    color: var(--muted); cursor: pointer; font-size: 1rem;
+    transition: color 0.2s;
+  }
+  .pw-toggle:hover { color: var(--accent2); }
+
+  .btn-login {
+    width: 100%;
+    padding: 0.95rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0b0c0e; border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 500; letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-login:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(201,168,76,0.25);
+  }
+  .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* shake animation for wrong password */
+  @keyframes shake {
+    0%,100% { transform: translateX(0) }
+    20%      { transform: translateX(-8px) }
+    40%      { transform: translateX(8px) }
+    60%      { transform: translateX(-5px) }
+    80%      { transform: translateX(5px) }
+  }
+  .shake { animation: shake 0.4s ease; }
+
+  /* ── top bar with logout ── */
+  .top-bar {
+    display: flex; align-items: center; justify-content: flex-end;
+    margin-bottom: 1.2rem;
+  }
+  .btn-logout {
+    background: none; border: 1px solid var(--border2);
+    color: var(--muted); border-radius: 8px;
+    padding: 0.3rem 0.75rem; font-size: 0.75rem;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+    transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+  }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── form fields ── */
+  .field { margin-bottom: 1.4rem; }
+  .field label {
+    display: block; font-size: 0.75rem; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 0.5rem;
+  }
+
+  .amount-wrap {
+    display: flex; align-items: stretch;
+    border: 1px solid var(--border2); border-radius: 10px;
+    overflow: hidden; transition: border-color 0.2s; background: var(--bg);
+  }
+  .amount-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+  }
+
+  .currency-badge {
+    padding: 0 1rem; background: #161820;
+    border-right: 1px solid var(--border2);
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'DM Mono', monospace; font-size: 0.85rem;
+    color: var(--accent2); white-space: nowrap; cursor: pointer;
+    position: relative; user-select: none;
+  }
+  .currency-badge:hover { background: #1c1e27; }
+
+  .currency-select {
+    position: absolute; top: calc(100% + 4px); left: 0;
+    background: #1a1d26; border: 1px solid var(--border2);
+    border-radius: 8px; overflow: hidden; z-index: 100;
+    min-width: 160px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    display: none;
+  }
+  .currency-select.open { display: block; animation: fadeUp 0.15s ease; }
+  .currency-opt {
+    padding: 0.65rem 1rem; font-family: 'DM Mono', monospace;
+    font-size: 0.82rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; color: var(--text);
+  }
+  .currency-opt:hover { background: rgba(201,168,76,0.08); color: var(--accent2); }
+  .currency-opt.selected { color: var(--accent2); }
+  .currency-opt span.name { color: var(--muted); font-size: 0.75rem; }
+
+  #amount {
+    flex: 1; border: none; background: transparent;
+    color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: 1.4rem; padding: 0.8rem 1rem; outline: none; width: 100%;
+  }
+  #amount::placeholder { color: #2e3140; }
+
+  .input-plain {
+    width: 100%; background: var(--bg);
+    border: 1px solid var(--border2); border-radius: 10px;
+    padding: 0.75rem 1rem; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 0.92rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .input-plain:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+  }
+  .input-plain::placeholder { color: #2e3140; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .btn-generate {
+    width: 100%; padding: 1rem;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    color: #0b0c0e; border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+    font-weight: 500; letter-spacing: 0.03em; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    margin-top: 0.5rem;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-generate:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(201,168,76,0.25);
+  }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,0.2); border-top-color: #0b0c0e;
+    border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+  }
+  .btn-generate.loading .spinner { display: block; }
+  .btn-generate.loading .btn-label { display: none; }
+
+  .result { margin-top: 1.5rem; display: none; animation: fadeUp 0.35s ease both; }
+  .result.visible { display: block; }
+
+  .result-label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .result-label .dot {
+    width: 6px; height: 6px; background: var(--green);
+    border-radius: 50%; box-shadow: 0 0 6px var(--green);
+    animation: pulse 1.5s ease infinite;
+  }
+
+  .url-box {
+    display: flex; align-items: stretch;
+    background: #0e1016; border: 1px solid #1d2030;
+    border-radius: 10px; overflow: hidden;
+  }
+  .url-text {
+    flex: 1; padding: 0.85rem 1rem;
+    font-family: 'DM Mono', monospace; font-size: 0.78rem;
+    color: var(--accent2); word-break: break-all; line-height: 1.5;
+  }
+  .btn-copy {
+    padding: 0 1.1rem; background: #161820; border: none;
+    border-left: 1px solid #1d2030; color: var(--muted);
+    cursor: pointer; font-size: 1rem;
+    transition: color 0.2s, background 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; gap: 6px;
+  }
+  .btn-copy:hover { color: var(--accent2); background: #1c1e28; }
+  .btn-copy.copied { color: var(--green); }
+  .btn-copy .copy-tooltip { font-family: 'DM Sans', sans-serif; font-size: 0.72rem; font-weight: 500; }
+
+  .meta-row { display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap; }
+  .meta-chip {
+    display: flex; align-items: center; gap: 5px;
+    background: #141620; border: 1px solid var(--border2);
+    border-radius: 6px; padding: 0.3rem 0.65rem;
+    font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted);
+  }
+  .meta-chip strong { color: var(--text); font-weight: 500; }
+
+  .error-box {
+    margin-top: 1.2rem; padding: 0.85rem 1rem;
+    background: rgba(224,82,82,0.07); border: 1px solid rgba(224,82,82,0.25);
+    border-radius: 10px; font-size: 0.85rem; color: #f08080;
+    display: none; animation: fadeUp 0.3s ease;
+  }
+  .error-box.visible { display: block; }
+
+  /* ── history ── */
+  .history-section { margin-top: 2rem; animation: fadeUp 0.6s ease 0.25s both; }
+  .history-header {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); margin-bottom: 0.75rem; padding-left: 2px;
+  }
+  .history-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .history-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.75rem 1rem;
+    display: flex; align-items: center; gap: 1rem;
+    transition: border-color 0.2s;
+  }
+  .history-item:hover { border-color: var(--border2); }
+  .history-item .h-amount {
+    font-family: 'DM Mono', monospace; font-weight: 500;
+    font-size: 0.92rem; color: var(--accent2); min-width: 80px;
+  }
+  .history-item .h-desc {
+    flex: 1; font-size: 0.82rem; color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .history-item .h-time {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    color: #3a3e50; white-space: nowrap;
+  }
+  .history-item .h-copy {
+    background: none; border: 1px solid var(--border2);
+    border-radius: 6px; padding: 0.25rem 0.5rem;
+    font-size: 0.7rem; color: var(--muted); cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .history-item .h-copy:hover { border-color: var(--accent); color: var(--accent2); }
+  .no-history {
+    text-align: center; color: var(--muted); font-size: 0.82rem;
+    padding: 1.5rem; background: var(--surface);
+    border: 1px dashed var(--border); border-radius: 10px;
+  }
+
+  .footer {
+    text-align: center; margin-top: 2rem; color: #2a2e3b;
+    font-size: 0.75rem; font-family: 'DM Mono', monospace;
+    animation: fadeUp 0.6s ease 0.4s both;
+  }
+
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-12px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(12px)  } to { opacity:1; transform:translateY(0) } }
+  @keyframes spin     { to { transform: rotate(360deg) } }
+  @keyframes pulse    { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+  @keyframes shake    { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+
+  @media (max-width: 480px) {
+    .row { grid-template-columns: 1fr; }
+    .header h1 { font-size: 1.6rem; }
+    #amount { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">⬡</div>
+      <span class="logo-name">TXPG</span>
+    </div>
+    <h1>Payment Link<br /><em>Generator</em></h1>
+    <p>Create secure payment links instantly</p>
+  </div>
+
+  <!-- ── LOGIN SCREEN ── -->
+  <div id="loginScreen">
+    <div class="card">
+      <div class="lock-icon">🔐</div>
+      <div class="login-title">Access Required</div>
+      <div class="login-sub">Enter your password to continue</div>
+
+      <div class="pw-wrap" id="pwWrap">
+        <input type="password" id="passwordInput" placeholder="Password" autocomplete="current-password" />
+        <button class="pw-toggle" id="pwToggle" onclick="togglePw()" title="Show/hide password">👁</button>
+      </div>
+
+      <div class="error-box" id="loginError"></div>
+
+      <button class="btn-login" id="loginBtn" onclick="doLogin()">
+        <div class="spinner" id="loginSpinner" style="display:none"></div>
+        <span id="loginLabel">Unlock</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── APP SCREEN ── -->
+  <div id="appScreen">
+    <div class="card">
+      <!-- logout button — only shown when password protection is active -->
+      <div class="top-bar" id="topBar" style="display:none">
+        <button class="btn-logout" onclick="doLogout()">
+          <span>⎋</span> Sign out
+        </button>
+      </div>
+
+      <div class="field">
+        <label>Amount</label>
+        <div class="amount-wrap">
+          <div class="currency-badge" id="currencyBadge">
+            <span id="currencyCode">₾ GEL</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <div class="currency-select" id="currencyMenu">
+              <div class="currency-opt selected" data-code="981" data-symbol="₾">
+                <span class="code">₾ GEL</span><span class="name">Georgian Lari</span>
+              </div>
+              <div class="currency-opt" data-code="840" data-symbol="$">
+                <span class="code">$ USD</span><span class="name">US Dollar</span>
+              </div>
+              <div class="currency-opt" data-code="978" data-symbol="€">
+                <span class="code">€ EUR</span><span class="name">Euro</span>
+              </div>
+            </div>
+          </div>
+          <input type="number" id="amount" placeholder="0.00" min="0.01" step="0.01" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Description</label>
+          <input class="input-plain" id="description" type="text" placeholder="Invoice #1234" maxlength="100" />
+        </div>
+        <div class="field">
+          <label>Language</label>
+          <select class="input-plain" id="language" style="cursor:pointer">
+            <option value="EN">English</option>
+            <option value="GE">Georgian</option>
+            <option value="RU">Russian</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-generate" id="generateBtn" onclick="generateLink()">
+        <div class="spinner"></div>
+        <span class="btn-label">Generate Payment Link</span>
+      </button>
+
+      <div class="error-box" id="errorBox"></div>
+
+      <div class="result" id="result">
+        <div class="result-label"><span class="dot"></span> Payment link ready</div>
+        <div class="url-box">
+          <div class="url-text" id="urlDisplay"></div>
+          <button class="btn-copy" id="copyBtn" onclick="copyUrl()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            <span class="copy-tooltip" id="copyLabel">Copy</span>
+          </button>
+        </div>
+        <div class="meta-row" id="metaRow"></div>
+      </div>
+    </div>
+
+    <div class="history-section">
+      <div class="history-header">Recent links</div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <div class="footer">txpg-payment-generator · secure · encrypted</div>
+</div>
+
+<script>
+  // ── Session storage ────────────────────────────────────────────────────────
+  let sessionToken = sessionStorage.getItem('txpg_token') || null;
+  let selectedCurrency = { code: '981', symbol: '₾', display: '₾ GEL' };
+  let currentUrl = '';
+  const history = JSON.parse(localStorage.getItem('txpg_history') || '[]');
+
+  // ── Boot: check auth status ────────────────────────────────────────────────
+  async function boot() {
+    const res = await fetch('/api/auth-status', {
+      headers: sessionToken ? { 'x-session-token': sessionToken } : {}
+    });
+    const data = await res.json();
+
+    if (data.authenticated) {
+      showApp(data.passwordRequired);
+    } else {
+      showLogin();
+    }
+  }
+
+  function showLogin() {
+    document.getElementById('loginScreen').classList.add('visible');
+    document.getElementById('appScreen').classList.remove('visible');
+    setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+  }
+
+  function showApp(showLogout) {
+    document.getElementById('loginScreen').classList.remove('visible');
+    document.getElementById('appScreen').classList.add('visible');
+    document.getElementById('topBar').style.display = showLogout ? 'flex' : 'none';
+    renderHistory();
+  }
+
+  // ── Login ──────────────────────────────────────────────────────────────────
+  async function doLogin() {
+    const pw = document.getElementById('passwordInput').value;
+    const btn = document.getElementById('loginBtn');
+    const spinner = document.getElementById('loginSpinner');
+    const label = document.getElementById('loginLabel');
+    const errBox = document.getElementById('loginError');
+
+    btn.disabled = true;
+    spinner.style.display = 'block';
+    label.style.display = 'none';
+    errBox.classList.remove('visible');
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errBox.textContent = '⚠ ' + (data.error || 'Incorrect password');
+        errBox.classList.add('visible');
+        // shake the card
+        const pwWrap = document.getElementById('pwWrap');
+        pwWrap.classList.remove('shake');
+        void pwWrap.offsetWidth;
+        pwWrap.classList.add('shake');
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+        return;
+      }
+
+      if (data.token) {
+        sessionToken = data.token;
+        sessionStorage.setItem('txpg_token', data.token);
+      }
+      showApp(data.passwordRequired);
+    } catch (e) {
+      errBox.textContent = '⚠ Network error';
+      errBox.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      label.style.display = 'inline';
+    }
+  }
+
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  async function doLogout() {
+    await fetch('/api/logout', {
+      method: 'POST',
+      headers: { 'x-session-token': sessionToken || '' }
+    }).catch(() => {});
+    sessionToken = null;
+    sessionStorage.removeItem('txpg_token');
+    showLogin();
+  }
+
+  // ── Password visibility toggle ─────────────────────────────────────────────
+  function togglePw() {
+    const inp = document.getElementById('passwordInput');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  // ── Currency dropdown ──────────────────────────────────────────────────────
+  const badge = document.getElementById('currencyBadge');
+  const menu  = document.getElementById('currencyMenu');
+  badge.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
+  document.addEventListener('click', () => menu.classList.remove('open'));
+  menu.querySelectorAll('.currency-opt').forEach(opt => {
+    opt.addEventListener('click', e => {
+      e.stopPropagation();
+      menu.querySelectorAll('.currency-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      selectedCurrency = { code: opt.dataset.code, symbol: opt.dataset.symbol, display: opt.querySelector('.code').textContent };
+      document.getElementById('currencyCode').textContent = selectedCurrency.display;
+      menu.classList.remove('open');
+    });
+  });
+
+  // ── Generate ───────────────────────────────────────────────────────────────
+  async function generateLink() {
+    const amountVal = document.getElementById('amount').value;
+    const description = document.getElementById('description').value.trim() || 'Payment';
+    const language = document.getElementById('language').value;
+
+    if (!amountVal || isNaN(amountVal) || Number(amountVal) <= 0) {
+      showError('Please enter a valid amount.'); return;
+    }
+
+    const btn = document.getElementById('generateBtn');
+    const errorBox = document.getElementById('errorBox');
+    const result = document.getElementById('result');
+
+    btn.disabled = true;
+    btn.classList.add('loading');
+    errorBox.classList.remove('visible');
+    result.classList.remove('visible');
+
+    try {
+      const resp = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(sessionToken ? { 'x-session-token': sessionToken } : {}),
+        },
+        body: JSON.stringify({ amount: Number(amountVal), currency: selectedCurrency.code, description, language }),
+      });
+
+      if (resp.status === 401) {
+        sessionToken = null;
+        sessionStorage.removeItem('txpg_token');
+        showLogin();
+        return;
+      }
+
+      const data = await resp.json();
+      if (!resp.ok) { showError(data.error || 'Gateway error. Please try again.'); return; }
+
+      currentUrl = data.paymentUrl;
+      showResult(data, Number(amountVal), description);
+      addHistory({ amount: Number(amountVal), currency: selectedCurrency, description, url: currentUrl, orderId: data.orderId, time: Date.now() });
+    } catch (err) {
+      showError('Network error. Please check your connection.');
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  }
+
+  function showResult(data, amount, desc) {
+    document.getElementById('urlDisplay').textContent = data.paymentUrl;
+    document.getElementById('result').classList.add('visible');
+    document.getElementById('copyLabel').textContent = 'Copy';
+    document.getElementById('copyBtn').classList.remove('copied');
+    document.getElementById('metaRow').innerHTML = `
+      <div class="meta-chip">Order <strong>#${data.orderId}</strong></div>
+      <div class="meta-chip">Amount <strong>${selectedCurrency.symbol}${amount.toFixed(2)}</strong></div>
+      <div class="meta-chip">Status <strong style="color:var(--green)">Active</strong></div>
+    `;
+  }
+
+  function showError(msg) {
+    const e = document.getElementById('errorBox');
+    e.textContent = '⚠ ' + msg;
+    e.classList.add('visible');
+  }
+
+  // ── Copy ───────────────────────────────────────────────────────────────────
+  async function copyUrl() {
+    if (!currentUrl) return;
+    try { await navigator.clipboard.writeText(currentUrl); } catch { fallbackCopy(currentUrl); }
+    const btn = document.getElementById('copyBtn');
+    const label = document.getElementById('copyLabel');
+    btn.classList.add('copied'); label.textContent = 'Copied!';
+    setTimeout(() => { btn.classList.remove('copied'); label.textContent = 'Copy'; }, 2200);
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+
+  // ── History ────────────────────────────────────────────────────────────────
+  function addHistory(item) {
+    history.unshift(item);
+    if (history.length > 8) history.pop();
+    localStorage.setItem('txpg_history', JSON.stringify(history));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    if (history.length === 0) {
+      list.innerHTML = '<div class="no-history">No links generated yet</div>'; return;
+    }
+    list.innerHTML = history.map((item, i) => `
+      <div class="history-item">
+        <span class="h-amount">${item.currency.symbol}${Number(item.amount).toFixed(2)}</span>
+        <span class="h-desc">${esc(item.description)}</span>
+        <span class="h-time">${fmtTime(item.time)}</span>
+        <button class="h-copy" onclick="copyHistory(${i})">Copy link</button>
+      </div>
+    `).join('');
+  }
+
+  async function copyHistory(i) {
+    await navigator.clipboard.writeText(history[i].url).catch(() => fallbackCopy(history[i].url));
+    const btns = document.querySelectorAll('.h-copy');
+    if (btns[i]) { btns[i].textContent = 'Copied!'; setTimeout(() => { btns[i].textContent = 'Copy link'; }, 1800); }
+  }
+
+  function fmtTime(ts) { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // ── Enter keys ─────────────────────────────────────────────────────────────
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('amount').addEventListener('keydown', e => { if (e.key === 'Enter') generateLink(); });
+  document.getElementById('description').addEventListener('keydown', e => { if (e.key === 'Enter') generateLink(); });
+
+  boot();
+</script>
+</body>
+</html>
